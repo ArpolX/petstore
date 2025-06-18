@@ -17,8 +17,8 @@ type RepositoryUserArray struct {
 type User struct {
 	ID         uint   `gorm:"primaryKey;autoIncrement"`
 	Username   string `gorm:"type:text;unique;not null"`
-	FirstName  string `gorm:"type:text;not null"`
-	LastName   string `gorm:"type:text;not null"`
+	FirstName  string `gorm:"type:text;column:firstname;not null"`
+	LastName   string `gorm:"type:text;column:lastname;not null"`
 	Email      string `gorm:"type:text;not null"`
 	Password   string `gorm:"type:text;not null"`
 	Phone      string `gorm:"type:text;not null"`

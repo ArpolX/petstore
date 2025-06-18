@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"petstore/internal/logs"
 	"petstore/internal/modules/user/service"
 
+	"github.com/go-chi/chi"
+	"github.com/go-playground/validator/v10"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -41,6 +44,12 @@ func (re *Respond) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := IsValidStruct(user); err != nil {
+		strErr := fmt.Sprintf("Невалидный запрос (неверный формат): %v", err.Error())
+		http.Error(w, strErr, http.StatusBadRequest)
+		return
+	}
+
 	serviceUser := service.ServiceUser{
 		UserName:   user.UserName,
 		FirstName:  user.FirstName,
@@ -63,7 +72,7 @@ func (re *Respond) Register(w http.ResponseWriter, r *http.Request) {
 func (re *Respond) RegisterArray(w http.ResponseWriter, r *http.Request) {
 	user := UserArray{}
 
-	err := json.NewDecoder(r.Body).Decode(user)
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Неверный формат", http.StatusBadRequest)
 		return
@@ -71,6 +80,11 @@ func (re *Respond) RegisterArray(w http.ResponseWriter, r *http.Request) {
 
 	serviceArrayUser := service.ServiceUserArray{}
 	for _, user := range user.UserArray {
+		if err := IsValidStruct(user); err != nil {
+			strErr := fmt.Sprintf("Невалидный запрос (неверный формат): %v", err.Error())
+			http.Error(w, strErr, http.StatusBadRequest)
+			return
+		}
 		serviceUser := service.ServiceUser{
 			UserName:   user.UserName,
 			FirstName:  user.FirstName,
@@ -122,12 +136,18 @@ func (re *Respond) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (re *Respond) Update(w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Path
+	username := chi.URLParam(r, "username")
 
 	user := User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Неверный формат", http.StatusBadRequest)
+		return
+	}
+
+	if err := IsValidStruct(user); err != nil {
+		strErr := fmt.Sprintf("Невалидный запрос (неверный формат): %v", err.Error())
+		http.Error(w, strErr, http.StatusBadRequest)
 		return
 	}
 
@@ -151,7 +171,7 @@ func (re *Respond) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (re *Respond) Get(w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Path
+	username := chi.URLParam(r, "username")
 
 	user, err := re.Auth.GetUser(username)
 	if err != nil {
@@ -161,6 +181,7 @@ func (re *Respond) Get(w http.ResponseWriter, r *http.Request) {
 
 	if user.UserName == "" {
 		http.Error(w, "Такого пользователя не существует", http.StatusOK)
+		return
 	}
 
 	err = json.NewEncoder(w).Encode(user)
@@ -171,7 +192,7 @@ func (re *Respond) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (re *Respond) Delete(w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Path
+	username := chi.URLParam(r, "username")
 
 	resp, err := re.Auth.DeleteUser(username)
 	if err != nil {
@@ -180,4 +201,9 @@ func (re *Respond) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(resp))
+}
+
+func IsValidStruct(u User) error {
+	valid := validator.New()
+	return (valid.Struct(u))
 }

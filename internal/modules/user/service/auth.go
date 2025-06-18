@@ -41,7 +41,7 @@ func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
+	if repUser.Username != "" {
 		return "Такой пользователь уже существует", nil
 	}
 
@@ -69,7 +69,7 @@ func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 			return "", errors.New("Неожиданная ошибка")
 		}
 
-		if repUser.UserName == "" {
+		if repUser.Username != "" {
 			return fmt.Sprintf("Пользователь %v уже существует, процедура прервана", u.UserName), nil
 		}
 	}
@@ -105,11 +105,11 @@ func (a *Auth) LoginUser(login, password string) (string, string, error) {
 		return "", "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
+	if repUser.Username == "" {
 		return "", "Неверный логин или пароль", nil
 	}
 
-	jti := uuid.New().String
+	jti := uuid.New().String()
 	claims := jwt.MapClaims{
 		"sub":   login,
 		"exp":   time.Now().Add(1 * time.Hour).Unix(),
@@ -120,7 +120,7 @@ func (a *Auth) LoginUser(login, password string) (string, string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte("ho-ho"))
 	if err != nil {
-		a.Log.Warn("Токет не создан", zap.String("err", err.Error()))
+		a.Log.Warn("Токен не создан", zap.String("err", err.Error()))
 		return "", "", errors.New("Неожиданная ошибка")
 	}
 
@@ -133,7 +133,7 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
+	if repUser.Username == "" {
 		return "Неверный логин или пароль", nil
 	}
 
@@ -168,13 +168,22 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 }
 
 func (a *Auth) UpdateUser(login string, user ServiceUser) (string, error) {
-	repUser, err := a.Db.GetUsernamePassword(user.UserName, user.Password)
+	repLogin, err := a.Db.GetUsername(login)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
-		return "Неверный логин или пароль", nil
+	if repLogin.Username == "" {
+		return "Такого логина не существует", nil
+	}
+
+	repUser, err := a.Db.GetUsername(user.UserName)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if repUser.Username != "" && repUser.Username != login {
+		return "Ваше обновлённое имя пользователя уже существует", nil
 	}
 
 	repositoryUser := repository.RepositoryUser{
@@ -192,7 +201,7 @@ func (a *Auth) UpdateUser(login string, user ServiceUser) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	return fmt.Sprintf("Обновление информации пользователя %v прошло успешно", user.UserName), nil
+	return fmt.Sprintf("Обновление информации пользователя %v прошло успешно", login), nil
 }
 
 func (a *Auth) GetUser(login string) (ServiceUser, error) {
@@ -201,12 +210,12 @@ func (a *Auth) GetUser(login string) (ServiceUser, error) {
 		return ServiceUser{}, errors.New("Неожиданная ошибка")
 	}
 
-	if user.UserName == "" {
+	if user.Username == "" {
 		return ServiceUser{}, nil
 	}
 
 	serviceUser := ServiceUser{
-		UserName:   user.UserName,
+		UserName:   user.Username,
 		FirstName:  user.FirstName,
 		LastName:   user.LastName,
 		Email:      user.Email,
@@ -224,7 +233,7 @@ func (a *Auth) DeleteUser(login string) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if user.UserName == "" {
+	if user.Username == "" {
 		return "Такого пользователя не существует", nil
 	}
 

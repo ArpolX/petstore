@@ -1,13 +1,13 @@
 package controller
 
 type User struct {
-	UserName   string `json:"user_name"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	Phone      string `json:"phone"`
-	UserStatus int    `json:"user_status"`
+	UserName   string `json:"username" validate:"required"`
+	FirstName  string `json:"firstName" validate:"required"`
+	LastName   string `json:"lastName" validate:"required"`
+	Email      string `json:"email" validate:"required"`
+	Password   string `json:"password" validate:"required"`
+	Phone      string `json:"phone" validate:"required"`
+	UserStatus int    `json:"userStatus"`
 }
 
 type UserArray struct {

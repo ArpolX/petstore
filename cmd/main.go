@@ -37,16 +37,15 @@ func main() {
 	userRespond := run.NewModulesUser(db_conn, logger)
 
 	server := http.Server{
-		//Addr:         ":8080",
 		Handler:      route.HandlerPetStore(userRespond),
-		ReadTimeout:  10,
-		WriteTimeout: 10,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	chClose := make(chan os.Signal, 1)
 	signal.Notify(chClose, syscall.SIGINT, syscall.SIGTERM)
 
-	listen, err := net.Listen("tcp", ":8080")
+	listen, err := net.Listen("tcp", "127.0.0.1:8080")
 	if err != nil {
 		logger.Fatal("Ошибка транспортного уровня", zap.String("err", err.Error()))
 	}
@@ -58,16 +57,18 @@ func main() {
 			logger.Fatal("Ошибка запуска сервера", zap.String("err", err.Error()))
 		}
 	}()
-	logger.Info("Сервер запущен", zap.String("addr", "127.0.0.1:8080"))
+	logger.Info("Сервер запущен", zap.String("addr", listen.Addr().String()))
 
 	<-chClose
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	err = server.Shutdown(ctx)
 	if err != nil {
 		logger.Warn("Сервер некорректно завершил работу", zap.String("err", err.Error()))
 		return
 	}
+	close(chClose)
 
 	logger.Info("Сервер остановлен Graceful Shutdown")
 }

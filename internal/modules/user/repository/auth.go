@@ -16,8 +16,8 @@ type Database interface {
 	Create(user RepositoryUser) error
 	Update(login string, user RepositoryUser) error
 	Delete(username string) error
-	GetUsernamePassword(username, password string) (RepositoryUser, error)
-	GetUsername(username string) (RepositoryUser, error)
+	GetUsernamePassword(username, password string) (User, error)
+	GetUsername(username string) (User, error)
 	TokenValid(jti string) error
 }
 
@@ -49,7 +49,9 @@ func (d *Db) Create(user RepositoryUser) error {
 }
 
 func (d *Db) Update(login string, user RepositoryUser) error {
-	err := d.db.Model(&User{}).
+	u := User{}
+
+	err := d.db.Model(&u).
 		Where("username = ?", login).
 		Updates(User{
 			FirstName:  user.FirstName,
@@ -68,7 +70,9 @@ func (d *Db) Update(login string, user RepositoryUser) error {
 }
 
 func (d *Db) Delete(username string) error {
-	err := d.db.Delete(&User{}, "username = ?", username).Error
+	u := User{}
+
+	err := d.db.Delete(&u, "username = ?", username).Error
 	if err != nil {
 		d.Log.Error("Ошибка в Delete запросе", zap.String("err", err.Error()))
 		return err
@@ -77,25 +81,25 @@ func (d *Db) Delete(username string) error {
 	return nil
 }
 
-func (d *Db) GetUsernamePassword(username, password string) (RepositoryUser, error) {
-	u := RepositoryUser{}
+func (d *Db) GetUsernamePassword(username, password string) (User, error) {
+	u := User{}
 
-	err := d.db.First(&u, "username = ?", username, "password = ?", password).Error
-	if err != nil {
+	err := d.db.First(&u, "username = ? and password = ?", username, password).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
 		d.Log.Error("Ошибка в Get запросе", zap.String("err", err.Error()))
-		return RepositoryUser{}, err
+		return User{}, err
 	}
 
 	return u, nil
 }
 
-func (d *Db) GetUsername(username string) (RepositoryUser, error) {
-	u := RepositoryUser{}
+func (d *Db) GetUsername(username string) (User, error) {
+	u := User{}
 
 	err := d.db.First(&u, "username = ?", username).Error
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		d.Log.Error("Ошибка в Get запросе", zap.String("err", err.Error()))
-		return RepositoryUser{}, err
+		return User{}, err
 	}
 
 	return u, nil
