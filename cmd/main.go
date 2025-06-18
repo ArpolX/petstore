@@ -35,9 +35,11 @@ func main() {
 
 	// user слои
 	userRespond := run.NewModulesUser(db_conn, logger)
+	// pet слои
+	petRespond := run.NewModulesPet(db_conn, logger)
 
 	server := http.Server{
-		Handler:      route.HandlerPetStore(userRespond),
+		Handler:      route.HandlerPetStore(userRespond, petRespond),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}

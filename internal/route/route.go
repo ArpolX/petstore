@@ -2,22 +2,38 @@ package route
 
 import (
 	"net/http"
-	"petstore/internal/modules/user/controller"
+	petCtrl "petstore/internal/modules/pet/controller"
+	userCtrl "petstore/internal/modules/user/controller"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/jwtauth"
 )
 
-func HandlerPetStore(uresp controller.Responder) http.Handler {
+func HandlerPetStore(userResp userCtrl.Responder, petResp petCtrl.AnimalStorer) http.Handler {
 	r := chi.NewRouter()
 
 	r.Route("/user", func(r chi.Router) {
-		r.Post("/createWithArray", uresp.RegisterArray)
-		r.Post("/", uresp.Register)
-		r.Get("/login", uresp.Login)
-		r.Get("/logout", uresp.Logout)
-		r.Get("/{username}", uresp.Get)
-		r.Put("/{username}", uresp.Update)
-		r.Delete("/{username}", uresp.Delete)
+		r.Post("/createWithArray", userResp.RegisterArray)
+		r.Post("/", userResp.Register)
+		r.Get("/login", userResp.Login)
+		r.Get("/logout", userResp.Logout)
+		r.Get("/{username}", userResp.Get)
+		r.Put("/{username}", userResp.Update)
+		r.Delete("/{username}", userResp.Delete)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier())
+		r.Use(jwtauth.Authenticator)
+
+		r.Route("/pet", func(r chi.Router) {
+			r.Post("/", petResp.RegisterPet)
+			r.Put("/", petResp.UpdatePet)
+			r.Get("/findByStatus", petResp.GetPetByStatus)
+			r.Get("/{petId}", petResp.GetPet)
+			r.Post("/{petId}", petResp.UpdateNameStatusPet)
+			r.Delete("/{petId}", petResp.DeletePet)
+		})
 	})
 
 	return r
