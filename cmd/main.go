@@ -34,12 +34,14 @@ func main() {
 	logger := logs.NewLogger()
 
 	// user слои
-	userRespond := run.NewModulesUser(db_conn, logger)
+	userRespond, middleAuth := run.NewModulesUser(db_conn, logger)
 	// pet слои
 	petRespond := run.NewModulesPet(db_conn, logger)
+	// order слои
+	orderRespond := run.NewModulesOrder(db_conn, logger)
 
 	server := http.Server{
-		Handler:      route.HandlerPetStore(userRespond, petRespond),
+		Handler:      route.HandlerPetStore(middleAuth, userRespond, petRespond, orderRespond),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}

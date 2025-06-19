@@ -51,13 +51,12 @@ func (re *Respond) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serviceUser := service.ServiceUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 
 	resp, err := re.Auth.RegisterUser(serviceUser)
@@ -86,13 +85,12 @@ func (re *Respond) RegisterArray(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		serviceUser := service.ServiceUser{
-			UserName:   user.UserName,
-			FirstName:  user.FirstName,
-			LastName:   user.LastName,
-			Email:      user.Email,
-			Password:   user.Password,
-			Phone:      user.Phone,
-			UserStatus: user.UserStatus,
+			UserName:  user.UserName,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Password:  user.Password,
+			Phone:     user.Phone,
 		}
 
 		serviceArrayUser.UserArray = append(serviceArrayUser.UserArray, serviceUser)
@@ -110,6 +108,10 @@ func (re *Respond) RegisterArray(w http.ResponseWriter, r *http.Request) {
 func (re *Respond) Login(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	password := r.URL.Query().Get("password")
+	if username == "" || password == "" {
+		http.Error(w, "Неверный формат", http.StatusBadRequest)
+		return
+	}
 
 	tokenString, resp, err := re.Auth.LoginUser(username, password)
 	if err != nil {
@@ -117,7 +119,7 @@ func (re *Respond) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Authorization", "Bearer "+tokenString)
+	w.Header().Add("Authorization", "Bearer "+tokenString)
 	w.Write([]byte(resp))
 }
 
@@ -152,13 +154,12 @@ func (re *Respond) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	serviceUser := service.ServiceUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 
 	resp, err := re.Auth.UpdateUser(username, serviceUser)

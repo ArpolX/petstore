@@ -29,9 +29,24 @@ func NewPetRepository(logger logs.Logger, db *gorm.DB) PetRepositoryer {
 }
 
 func (pe *PetRepository) Create(p Pet) error {
-	err := pe.db.Create(&p).Error
+	err := pe.db.Transaction(func(tx *gorm.DB) error {
+		err := pe.db.Exec("insert into pets (id, name, category_id, status) values (?, ?, ?, ?)", p.Id, p.Name, p.Category.Id, p.Status).Error
+		if err != nil {
+			pe.Log.Error("Ошибка в Create запросе", zap.String("err", err.Error()))
+			return err
+		}
+
+		for _, t := range p.Tag {
+			err = tx.Exec("INSERT INTO pet_tags (pet_id, tag_id) VALUES (?, ?)", p.Id, t.Id).Error
+			if err != nil {
+				pe.Log.Error("Ошибка в Exec запросе", zap.String("err", err.Error()))
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
-		pe.Log.Error("Ошибка в Create запросе", zap.String("err", err.Error()))
 		return err
 	}
 

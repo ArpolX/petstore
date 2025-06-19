@@ -46,13 +46,12 @@ func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
 	}
 
 	repositoryUser := repository.RepositoryUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 	err = a.Db.Create(repositoryUser)
 	if err != nil {
@@ -77,13 +76,12 @@ func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 	repositoryArrayUser := repository.RepositoryUserArray{}
 	for _, user := range userArr.UserArray {
 		repositoryUser := repository.RepositoryUser{
-			UserName:   user.UserName,
-			FirstName:  user.FirstName,
-			LastName:   user.LastName,
-			Email:      user.Email,
-			Password:   user.Password,
-			Phone:      user.Phone,
-			UserStatus: user.UserStatus,
+			UserName:  user.UserName,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Password:  user.Password,
+			Phone:     user.Phone,
 		}
 
 		repositoryArrayUser.UserArray = append(repositoryArrayUser.UserArray, repositoryUser)
@@ -159,7 +157,7 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 
 	jtiString := jti.(string)
 
-	err = a.Db.TokenValid(jtiString)
+	err = a.Db.CreateTokenBlack(jtiString)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
@@ -183,17 +181,16 @@ func (a *Auth) UpdateUser(login string, user ServiceUser) (string, error) {
 	}
 
 	if repUser.Username != "" && repUser.Username != login {
-		return "Ваше обновлённое имя пользователя уже существует", nil
+		return "Логин, на который вы хотите обновиться, уже существует", nil
 	}
 
 	repositoryUser := repository.RepositoryUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 
 	err = a.Db.Update(login, repositoryUser)
@@ -215,13 +212,12 @@ func (a *Auth) GetUser(login string) (ServiceUser, error) {
 	}
 
 	serviceUser := ServiceUser{
-		UserName:   user.Username,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.Username,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 
 	return serviceUser, nil

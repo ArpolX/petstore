@@ -120,7 +120,7 @@ func (a *AnimalStore) UpdatePet(w http.ResponseWriter, r *http.Request) {
 
 func (a *AnimalStore) UpdateNameStatusPet(w http.ResponseWriter, r *http.Request) {
 	petId := chi.URLParam(r, "petId")
-	err := r.ParseForm()
+	err := r.ParseMultipartForm(5 << 20)
 	if err != nil {
 		http.Error(w, "Неверный формат formData", http.StatusBadRequest)
 		return
@@ -128,6 +128,10 @@ func (a *AnimalStore) UpdateNameStatusPet(w http.ResponseWriter, r *http.Request
 
 	name := r.FormValue("name")
 	status := r.FormValue("status")
+	if name == "" || status == "" {
+		http.Error(w, "Неверный формат", http.StatusBadRequest)
+		return
+	}
 	petIdInt, _ := strconv.Atoi(petId)
 
 	resp, err := a.PetService.UpdateNameStatusService(petIdInt, name, status)
