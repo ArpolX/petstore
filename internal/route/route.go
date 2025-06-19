@@ -10,12 +10,17 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/jwtauth"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func HandlerPetStore(middleAuth user.AuthMiddlewarer, userСtrl userCtrl.Responder, petCtrl petCtrl.AnimalStorer, orderCtrl orderCtrl.OrderResponder) http.Handler {
 	r := chi.NewRouter()
 
 	token := jwtauth.New("HS256", []byte("ho-ho"), nil)
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
 
 	r.Route("/user", func(r chi.Router) {
 		r.Post("/createWithArray", userСtrl.RegisterArray)

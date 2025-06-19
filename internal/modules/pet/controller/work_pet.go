@@ -36,6 +36,17 @@ func NewAnimalStore(logger logs.Logger, petService service.PetServicer) AnimalSt
 	}
 }
 
+// @Summary Добавить нового питомца в магазин
+// @Description Создание и добавление нового питомца с различными полями. Отсчёт будет идти от id (не должен повторяться)
+// @Tags pet
+// @Security BearerAuth
+// @Accept json
+// @Produce plain
+// @Param pet body Pet true "Заполни все поля для добавления"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /pet/ [post]
 func (a *AnimalStore) RegisterPet(w http.ResponseWriter, r *http.Request) {
 	p := Pet{}
 
@@ -77,6 +88,17 @@ func (a *AnimalStore) RegisterPet(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// @Summary Обновить информацию о питомце
+// @Description Обновить информацию, id не должен изменятся
+// @Tags pet
+// @Security BearerAuth
+// @Accept json
+// @Produce plain
+// @Param pet body Pet true "Заполни все поля для изменения"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /pet/ [put]
 func (a *AnimalStore) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	p := Pet{}
 
@@ -118,6 +140,19 @@ func (a *AnimalStore) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// @Summary Обновить информацию о питомце
+// @Description Обновить только name и status
+// @Tags pet
+// @Security BearerAuth
+// @Accept json
+// @Produce plain
+// @Param petId path string true "Введи Id животного"
+// @Param name formData string true "Имя питомца"
+// @Param status formData string true "Статус питомца (available, sold, pending)"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /pet/{petId} [post]
 func (a *AnimalStore) UpdateNameStatusPet(w http.ResponseWriter, r *http.Request) {
 	petId := chi.URLParam(r, "petId")
 	err := r.ParseMultipartForm(5 << 20)
@@ -143,6 +178,17 @@ func (a *AnimalStore) UpdateNameStatusPet(w http.ResponseWriter, r *http.Request
 	w.Write([]byte(resp))
 }
 
+// @Summary Получить всех животных по статусу
+// @Description Получить всех животных по статусу
+// @Tags pet
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param status query string true "Статус питомца (available, sold, pending)"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /pet/findByStatus [get]
 func (a *AnimalStore) GetPetByStatus(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 
@@ -159,6 +205,17 @@ func (a *AnimalStore) GetPetByStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Получить животного по id
+// @Description Получить одного животного по id
+// @Tags pet
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param petId path string true "id питомца"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /pet/{petId} [get]
 func (a *AnimalStore) GetPet(w http.ResponseWriter, r *http.Request) {
 	petId := chi.URLParam(r, "petId")
 	petIdInt, _ := strconv.Atoi(petId)
@@ -176,6 +233,17 @@ func (a *AnimalStore) GetPet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Удалить животного по id
+// @Description Удалить одного животного по id
+// @Tags pet
+// @Security BearerAuth
+// @Accept json
+// @Produce plain
+// @Param petId path string true "id питомца"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /pet/{petId} [delete]
 func (a *AnimalStore) DeletePet(w http.ResponseWriter, r *http.Request) {
 	petId := chi.URLParam(r, "petId")
 	petIdInt, _ := strconv.Atoi(petId)

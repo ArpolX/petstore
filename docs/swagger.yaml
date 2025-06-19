@@ -1,0 +1,620 @@
+basePath: /
+definitions:
+  internal_modules_order_controller.Order:
+    properties:
+      complete:
+        type: boolean
+      id:
+        type: integer
+      petId:
+        type: integer
+      quantity:
+        type: integer
+      shipDate:
+        type: string
+      status:
+        type: string
+    required:
+    - complete
+    - id
+    - petId
+    - quantity
+    - shipDate
+    - status
+    type: object
+  internal_modules_pet_controller.Category:
+    properties:
+      id:
+        maximum: 2
+        minimum: 1
+        type: integer
+    required:
+    - id
+    type: object
+  internal_modules_pet_controller.Pet:
+    properties:
+      category:
+        $ref: '#/definitions/internal_modules_pet_controller.Category'
+      id:
+        type: integer
+      name:
+        type: string
+      photoUrls:
+        items:
+          type: string
+        type: array
+      status:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/internal_modules_pet_controller.Tag'
+        type: array
+    required:
+    - category
+    - id
+    - name
+    - status
+    - tags
+    type: object
+  internal_modules_pet_controller.Tag:
+    properties:
+      id:
+        maximum: 3
+        minimum: 1
+        type: integer
+    required:
+    - id
+    type: object
+  internal_modules_user_controller.User:
+    properties:
+      email:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - firstName
+    - lastName
+    - password
+    - phone
+    - username
+    type: object
+  internal_modules_user_controller.UserArray:
+    properties:
+      user:
+        items:
+          $ref: '#/definitions/internal_modules_user_controller.User'
+        type: array
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Создание пользователей, авторизация и аннулирование токена, добавление
+    животного и его последующая продажа
+  title: Petstore
+  version: "1.0"
+paths:
+  /pet/:
+    post:
+      consumes:
+      - application/json
+      description: Создание и добавление нового питомца с различными полями. Отсчёт
+        будет идти от id (не должен повторяться)
+      parameters:
+      - description: Заполни все поля для добавления
+        in: body
+        name: pet
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_pet_controller.Pet'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Добавить нового питомца в магазин
+      tags:
+      - pet
+    put:
+      consumes:
+      - application/json
+      description: Обновить информацию, id не должен изменятся
+      parameters:
+      - description: Заполни все поля для изменения
+        in: body
+        name: pet
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_pet_controller.Pet'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Обновить информацию о питомце
+      tags:
+      - pet
+  /pet/{petId}:
+    delete:
+      consumes:
+      - application/json
+      description: Удалить одного животного по id
+      parameters:
+      - description: id питомца
+        in: path
+        name: petId
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Удалить животного по id
+      tags:
+      - pet
+    get:
+      consumes:
+      - application/json
+      description: Получить одного животного по id
+      parameters:
+      - description: id питомца
+        in: path
+        name: petId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить животного по id
+      tags:
+      - pet
+    post:
+      consumes:
+      - application/json
+      description: Обновить только name и status
+      parameters:
+      - description: Введи Id животного
+        in: path
+        name: petId
+        required: true
+        type: string
+      - description: Имя питомца
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Статус питомца (available, sold, pending)
+        in: formData
+        name: status
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Обновить информацию о питомце
+      tags:
+      - pet
+  /pet/findByStatus:
+    get:
+      consumes:
+      - application/json
+      description: Получить всех животных по статусу
+      parameters:
+      - description: Статус питомца (available, sold, pending)
+        in: query
+        name: status
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Получить всех животных по статусу
+      tags:
+      - pet
+  /store/order:
+    post:
+      consumes:
+      - application/json
+      description: Создание заказа на животного. Отсчёт по id (не должен повторяться)
+      parameters:
+      - description: Заполни все поля для размещения заказа
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_order_controller.Order'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Разместить заказ на животного
+      tags:
+      - order
+  /store/order/{orderId}:
+    delete:
+      consumes:
+      - application/json
+      description: Удалить заказ по Id
+      parameters:
+      - description: Введите id заказа
+        in: path
+        name: orderId
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Удалить заказ по Id
+      tags:
+      - order
+    get:
+      consumes:
+      - application/json
+      description: Получить заказ по Id
+      parameters:
+      - description: Введите id заказа
+        in: path
+        name: orderId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить заказ по Id
+      tags:
+      - order
+  /user/:
+    post:
+      consumes:
+      - application/json
+      description: Создание нового пользователя с различными полями. Отсчёт будет
+        идти от username (не должен повторяться)
+      parameters:
+      - description: Заполни все поля для регистрации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_user_controller.User'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация нового пользователя
+      tags:
+      - user
+  /user/{username}:
+    delete:
+      consumes:
+      - application/json
+      description: Мягкое удаление пользователя (проставление даты)
+      parameters:
+      - description: Укажи username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Удаление пользователя
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Получить полную информацию о пользователе (для тестов)
+      parameters:
+      - description: Укажи username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Получить пользователя
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Нельзя обновить на то имя пользователя, которое уже есть в базе
+      parameters:
+      - description: Укажи username
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Заполни все поля для обновления информации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_user_controller.User'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Обновить пользователя
+      tags:
+      - user
+  /user/createWithArray:
+    post:
+      consumes:
+      - application/json
+      description: Создание новой группы пользователей с различными полями. Отсчёт
+        будет идти от username (не должен повторяться)
+      parameters:
+      - description: Заполни все поля для регистрации
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_modules_user_controller.UserArray'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Регистрация группы пользователей
+      tags:
+      - user
+  /user/login:
+    get:
+      consumes:
+      - application/json
+      description: Создание токена jwt и отправка в заголовке. Получите токен через
+        postman и затем протестируйте logout, если необходимо
+      parameters:
+      - description: Укажи username
+        in: query
+        name: username
+        required: true
+        type: string
+      - description: Укажи пароль
+        in: query
+        name: password
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Вход в систему
+      tags:
+      - user
+  /user/logout:
+    get:
+      consumes:
+      - application/json
+      description: Аннулирование jwt токена через black_list
+      parameters:
+      - description: Укажи username
+        in: query
+        name: username
+        required: true
+        type: string
+      - description: Укажи пароль
+        in: query
+        name: password
+        required: true
+        type: string
+      - description: Bearer токен доступа для имитации отправки браузером
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешная регистрация или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат структуры
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      summary: Выход из системы
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -16,10 +16,22 @@ import (
 	"petstore/internal/route"
 	"petstore/run"
 
+	_ "petstore/docs"
+
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
+// @title Petstore
+// @description Создание пользователей, авторизация и аннулирование токена, добавление животного и его последующая продажа
+// @version 1.0
+
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	err := godotenv.Load(".env")
 	if err != nil {

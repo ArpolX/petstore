@@ -31,6 +31,16 @@ func NewOrderRespond(logger logs.Logger, orderServicer service.OrderServicer) Or
 	}
 }
 
+// @Summary Разместить заказ на животного
+// @Description Создание заказа на животного. Отсчёт по id (не должен повторяться)
+// @Tags order
+// @Accept json
+// @Produce plain
+// @Param order body Order true "Заполни все поля для размещения заказа"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /store/order [post]
 func (o *OrderRespond) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	order := Order{}
 
@@ -63,6 +73,16 @@ func (o *OrderRespond) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
+// @Summary Получить заказ по Id
+// @Description Получить заказ по Id
+// @Tags order
+// @Accept json
+// @Produce json
+// @Param orderId path string true "Введите id заказа"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /store/order/{orderId} [get]
 func (o *OrderRespond) GetOrder(w http.ResponseWriter, r *http.Request) {
 	orderId := chi.URLParam(r, "orderId")
 
@@ -91,6 +111,16 @@ func (o *OrderRespond) GetOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @Summary Удалить заказ по Id
+// @Description Удалить заказ по Id
+// @Tags order
+// @Accept json
+// @Produce plain
+// @Param orderId path string true "Введите id заказа"
+// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат структуры"
+// @Failure 500 {string} Err "Внутренняя ошибка сервера"
+// @Router /store/order/{orderId} [delete]
 func (o *OrderRespond) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 	orderId := chi.URLParam(r, "orderId")
 
