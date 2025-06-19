@@ -27,20 +27,19 @@ func NewPetService(logger logs.Logger, petRepository repository.PetRepositoryer)
 }
 
 func (pe *PetService) RegisterService(p Pet) (string, error) {
-	pet, err := pe.PetRepository.GetName(p.Name)
+	pet, err := pe.PetRepository.GetId(p.Id)
 	if err != nil {
 		return "", err
 	}
 
-	if pet.Name != "" {
-		return "Такое имя уже существует", nil
+	if pet.Id != 0 {
+		return "Такой id уже существует", nil
 	}
 
 	tagRepository := []repository.Tag{}
 	for _, tag := range p.Tag {
 		tags := repository.Tag{
-			Id:   tag.Id,
-			Name: tag.Name,
+			Id: tag.Id,
 		}
 		tagRepository = append(tagRepository, tags)
 	}
@@ -63,20 +62,19 @@ func (pe *PetService) RegisterService(p Pet) (string, error) {
 }
 
 func (pe *PetService) UpdateService(p Pet) (string, error) {
-	pet, err := pe.PetRepository.GetName(p.Name)
+	pet, err := pe.PetRepository.GetId(p.Id)
 	if err != nil {
 		return "", err
 	}
 
-	if pet.Name != "" {
-		return "Имя животного не найдено", nil
+	if pet.Id == 0 {
+		return "Такого id не существует", nil
 	}
 
 	tagRepository := []repository.Tag{}
 	for _, tag := range p.Tag {
 		tags := repository.Tag{
-			Id:   tag.Id,
-			Name: tag.Name,
+			Id: tag.Id,
 		}
 		tagRepository = append(tagRepository, tags)
 	}
@@ -106,10 +104,6 @@ func (pe *PetService) UpdateNameStatusService(petId int, name, status string) (s
 
 	if pet.Id == 0 {
 		return "ID животного не найдено", nil
-	}
-
-	if pet.Name != "" {
-		return "Такое имя уже существует", nil
 	}
 
 	err = pe.PetRepository.UpdateNameStatus(petId, name, status)
@@ -146,6 +140,11 @@ func (pe *PetService) DeleteService(petId int) (string, error) {
 
 	if pet.Name == "" {
 		return "Животное не найдено", nil
+	}
+
+	err = pe.PetRepository.Delete(petId)
+	if err != nil {
+		return "", err
 	}
 
 	return "Животное успешно удалено", nil

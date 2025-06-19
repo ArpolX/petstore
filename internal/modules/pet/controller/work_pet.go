@@ -54,8 +54,7 @@ func (a *AnimalStore) RegisterPet(w http.ResponseWriter, r *http.Request) {
 	tagService := []service.Tag{}
 	for _, tag := range p.Tag {
 		tags := service.Tag{
-			Id:   tag.Id,
-			Name: tag.Name,
+			Id: tag.Id,
 		}
 		tagService = append(tagService, tags)
 	}
@@ -96,8 +95,7 @@ func (a *AnimalStore) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	tagService := []service.Tag{}
 	for _, tag := range p.Tag {
 		tags := service.Tag{
-			Id:   tag.Id,
-			Name: tag.Name,
+			Id: tag.Id,
 		}
 		tagService = append(tagService, tags)
 	}

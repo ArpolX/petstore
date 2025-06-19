@@ -19,7 +19,7 @@ func NewConnect(cfg config.AppConf) *gorm.DB {
 		Logger: logger.New(
 			log.New(os.Stdout, "\n", log.Flags()),
 			logger.Config{
-				LogLevel: logger.Error,
+				LogLevel: logger.Info,
 				Colorful: true,
 			},
 		),

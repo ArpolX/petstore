@@ -1,13 +1,11 @@
 package service
 
 type Category struct {
-	Id   int
-	Name string
+	Id int
 }
 
 type Tag struct {
-	Id   int
-	Name string
+	Id int
 }
 
 type Pet struct {
@@ -17,10 +15,4 @@ type Pet struct {
 	PhotoUrls []string
 	Tag       []Tag
 	Status    string
-}
-
-type ApiResponse struct {
-	Code    int
-	Type    string
-	Message string
 }

@@ -19,7 +19,6 @@ type PetRepositoryer interface {
 	Delete(petId int) error
 	GetId(petId int) (Pet, error)
 	GetStatus(status string) ([]Pet, error)
-	GetName(name string) (Pet, error)
 }
 
 func NewPetRepository(logger logs.Logger, db *gorm.DB) PetRepositoryer {
@@ -40,9 +39,34 @@ func (pe *PetRepository) Create(p Pet) error {
 }
 
 func (pe *PetRepository) Update(p Pet) error {
-	err := pe.db.Model(&Pet{}).Where("id = ?", p.Id).Updates(p).Error
+	err := pe.db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&Pet{}).Where("id = ?", p.Id).Updates(map[string]interface{}{
+			"name":        p.Name,
+			"status":      p.Status,
+			"category_id": p.Category.Id,
+		}).Error
+		if err != nil {
+			pe.Log.Error("Ошибка в Update запросе", zap.String("err", err.Error()))
+			return err
+		}
+
+		err = tx.Exec("DELETE FROM pet_tags WHERE pet_id = ?", p.Id).Error
+		if err != nil {
+			pe.Log.Error("Ошибка в Exec запросе", zap.String("err", err.Error()))
+			return err
+		}
+
+		for _, t := range p.Tag {
+			err = tx.Exec("INSERT INTO pet_tags (pet_id, tag_id) VALUES (?, ?)", p.Id, t.Id).Error
+			if err != nil {
+				pe.Log.Error("Ошибка в Exec запросе", zap.String("err", err.Error()))
+				return err
+			}
+		}
+
+		return nil
+	})
 	if err != nil {
-		pe.Log.Error("Ошибка в Update запросе", zap.String("err", err.Error()))
 		return err
 	}
 
@@ -55,6 +79,7 @@ func (pe *PetRepository) UpdateNameStatus(petId int, name, status string) error 
 		"status": status,
 	}).Error
 	if err != nil {
+		pe.Log.Error("Ошибка в Update запросе", zap.String("err", err.Error()))
 		return err
 	}
 
@@ -62,7 +87,21 @@ func (pe *PetRepository) UpdateNameStatus(petId int, name, status string) error 
 }
 
 func (pe *PetRepository) Delete(petId int) error {
-	err := pe.db.Delete(&Pet{}, "id = ?", petId).Error
+	err := pe.db.Transaction(func(tx *gorm.DB) error {
+		err := pe.db.Exec("delete from pet_tags where pet_id = ?", petId).Error
+		if err != nil {
+			pe.Log.Error("Ошибка в Exec запросе", zap.String("err", err.Error()))
+			return err
+		}
+
+		err = pe.db.Delete(&Pet{}, "id = ?", petId).Error
+		if err != nil {
+			pe.Log.Error("Ошибка в Delete запросе", zap.String("err", err.Error()))
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -74,7 +113,7 @@ func (pe *PetRepository) GetId(petId int) (Pet, error) {
 	p := Pet{}
 
 	err := pe.db.First(&p, "id = ?", petId).Error
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return Pet{}, err
 	}
 
@@ -85,19 +124,8 @@ func (pe *PetRepository) GetStatus(status string) ([]Pet, error) {
 	p := []Pet{}
 
 	err := pe.db.Find(&p, "status = ?", status).Error
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
-	}
-
-	return p, nil
-}
-
-func (pe *PetRepository) GetName(name string) (Pet, error) {
-	p := Pet{}
-
-	err := pe.db.First(&p, "name = ?", name).Error
-	if err != nil {
-		return Pet{}, err
 	}
 
 	return p, nil

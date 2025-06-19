@@ -6,11 +6,12 @@ import (
 	userCtrl "petstore/internal/modules/user/controller"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/jwtauth"
 )
 
 func HandlerPetStore(userResp userCtrl.Responder, petResp petCtrl.AnimalStorer) http.Handler {
 	r := chi.NewRouter()
+
+	//token := jwtauth.New("HS256", []byte("ho-ho"), nil)
 
 	r.Route("/user", func(r chi.Router) {
 		r.Post("/createWithArray", userResp.RegisterArray)
@@ -23,8 +24,8 @@ func HandlerPetStore(userResp userCtrl.Responder, petResp petCtrl.AnimalStorer) 
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(jwtauth.Verifier())
-		r.Use(jwtauth.Authenticator)
+		//r.Use(jwtauth.Verifier(token))
+		//r.Use(jwtauth.Authenticator)
 
 		r.Route("/pet", func(r chi.Router) {
 			r.Post("/", petResp.RegisterPet)

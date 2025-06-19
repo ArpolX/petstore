@@ -1,13 +1,11 @@
 package controller
 
 type Category struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Id int `json:"id" validate:"required,min=1,max=2"`
 }
 
 type Tag struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Id int `json:"id" validate:"required,min=1,max=3"`
 }
 
 type Pet struct {
@@ -15,7 +13,7 @@ type Pet struct {
 	Name      string   `json:"name" validate:"required"`
 	Category  Category `json:"category" validate:"required"`
 	PhotoUrls []string `json:"photoUrls"`
-	Tag       []Tag    `json:"tags" validate:"required"`
+	Tag       []Tag    `json:"tags" validate:"required,dive"`
 	Status    string   `json:"status" validate:"required"`
 }
 
