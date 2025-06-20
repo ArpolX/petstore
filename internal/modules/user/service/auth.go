@@ -36,24 +36,38 @@ func NewAuth(logger logs.Logger, db repository.Database) Auther {
 }
 
 func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
-	repUser, err := a.Db.GetUsernamePassword(user.UserName, user.Password)
+	repositoryUser := repository.RepositoryUser{
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
+	}
+
+	repUser, err := a.Db.GetUsernameDeleted(user.UserName)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
+	if repUser.Username != "" {
+		err := a.Db.Update(repositoryUser.UserName, repositoryUser)
+		if err != nil {
+			return "", errors.New("Неожиданная ошибка")
+		}
+
+		return fmt.Sprintf("Восстановление пользователя %v прошло успешно, новые данные присвоены", user.UserName), nil
+	}
+
+	repUser, err = a.Db.GetUsernamePassword(user.UserName, user.Password)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if repUser.Username != "" {
 		return "Такой пользователь уже существует", nil
 	}
 
-	repositoryUser := repository.RepositoryUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
-	}
 	err = a.Db.Create(repositoryUser)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
@@ -69,21 +83,38 @@ func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 			return "", errors.New("Неожиданная ошибка")
 		}
 
-		if repUser.UserName == "" {
+		if repUser.Username != "" {
 			return fmt.Sprintf("Пользователь %v уже существует, процедура прервана", u.UserName), nil
+		}
+
+		repUser, err = a.Db.GetUsernameDeleted(u.UserName)
+		if err != nil {
+			return "", errors.New("Неожиданная ошибка")
+		}
+
+		if repUser.Username != "" {
+			return fmt.Sprintf("Пользователь %v уже существовал ранее, воспользуйтесь одиночным восстановлением аккаунта", u.UserName), nil
+		}
+	}
+
+	for _, u := range userArr.UserArray {
+		prov := u
+		for _, user := range userArr.UserArray {
+			if prov.UserName == user.UserName {
+				return fmt.Sprintf("Вы ввели одинаковых пользователей %v, процедура прервана", user.UserName), nil
+			}
 		}
 	}
 
 	repositoryArrayUser := repository.RepositoryUserArray{}
 	for _, user := range userArr.UserArray {
 		repositoryUser := repository.RepositoryUser{
-			UserName:   user.UserName,
-			FirstName:  user.FirstName,
-			LastName:   user.LastName,
-			Email:      user.Email,
-			Password:   user.Password,
-			Phone:      user.Phone,
-			UserStatus: user.UserStatus,
+			UserName:  user.UserName,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Password:  user.Password,
+			Phone:     user.Phone,
 		}
 
 		repositoryArrayUser.UserArray = append(repositoryArrayUser.UserArray, repositoryUser)
@@ -105,11 +136,11 @@ func (a *Auth) LoginUser(login, password string) (string, string, error) {
 		return "", "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
+	if repUser.Username == "" {
 		return "", "Неверный логин или пароль", nil
 	}
 
-	jti := uuid.New().String
+	jti := uuid.New().String()
 	claims := jwt.MapClaims{
 		"sub":   login,
 		"exp":   time.Now().Add(1 * time.Hour).Unix(),
@@ -120,7 +151,7 @@ func (a *Auth) LoginUser(login, password string) (string, string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte("ho-ho"))
 	if err != nil {
-		a.Log.Warn("Токет не создан", zap.String("err", err.Error()))
+		a.Log.Warn("Токен не создан", zap.String("err", err.Error()))
 		return "", "", errors.New("Неожиданная ошибка")
 	}
 
@@ -133,7 +164,7 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
+	if repUser.Username == "" {
 		return "Неверный логин или пароль", nil
 	}
 
@@ -159,7 +190,16 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 
 	jtiString := jti.(string)
 
-	err = a.Db.TokenValid(jtiString)
+	jtiValid, err := a.Db.TokenValid(jtiString)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if jtiValid != "" {
+		return "Этот токен уже в чёрном списке", nil
+	}
+
+	err = a.Db.CreateTokenBlack(jtiString)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
@@ -168,23 +208,31 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 }
 
 func (a *Auth) UpdateUser(login string, user ServiceUser) (string, error) {
-	repUser, err := a.Db.GetUsernamePassword(user.UserName, user.Password)
+	repLogin, err := a.Db.GetUsername(login)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if repUser.UserName == "" {
-		return "Неверный логин или пароль", nil
+	if repLogin.Username == "" {
+		return "Такого логина не существует", nil
+	}
+
+	repUser, err := a.Db.GetUsername(user.UserName)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if repUser.Username != "" && repUser.Username != login {
+		return "Логин, на который вы хотите обновиться, уже существует", nil
 	}
 
 	repositoryUser := repository.RepositoryUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.UserName,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 
 	err = a.Db.Update(login, repositoryUser)
@@ -192,7 +240,7 @@ func (a *Auth) UpdateUser(login string, user ServiceUser) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	return fmt.Sprintf("Обновление информации пользователя %v прошло успешно", user.UserName), nil
+	return fmt.Sprintf("Обновление информации пользователя %v прошло успешно", login), nil
 }
 
 func (a *Auth) GetUser(login string) (ServiceUser, error) {
@@ -201,18 +249,17 @@ func (a *Auth) GetUser(login string) (ServiceUser, error) {
 		return ServiceUser{}, errors.New("Неожиданная ошибка")
 	}
 
-	if user.UserName == "" {
+	if user.Username == "" {
 		return ServiceUser{}, nil
 	}
 
 	serviceUser := ServiceUser{
-		UserName:   user.UserName,
-		FirstName:  user.FirstName,
-		LastName:   user.LastName,
-		Email:      user.Email,
-		Password:   user.Password,
-		Phone:      user.Phone,
-		UserStatus: user.UserStatus,
+		UserName:  user.Username,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  user.Password,
+		Phone:     user.Phone,
 	}
 
 	return serviceUser, nil
@@ -224,7 +271,7 @@ func (a *Auth) DeleteUser(login string) (string, error) {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
-	if user.UserName == "" {
+	if user.Username == "" {
 		return "Такого пользователя не существует", nil
 	}
 

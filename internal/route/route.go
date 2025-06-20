@@ -2,22 +2,57 @@ package route
 
 import (
 	"net/http"
-	"petstore/internal/modules/user/controller"
+	petCtrl "petstore/internal/modules/pet/controller"
+	"petstore/internal/modules/user"
+	userCtrl "petstore/internal/modules/user/controller"
+
+	orderCtrl "petstore/internal/modules/order/controller"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/jwtauth"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-func HandlerPetStore(uresp controller.Responder) http.Handler {
+func HandlerPetStore(middleAuth user.AuthMiddlewarer, userСtrl userCtrl.Responder, petCtrl petCtrl.AnimalStorer, orderCtrl orderCtrl.OrderResponder) http.Handler {
 	r := chi.NewRouter()
 
+	token := jwtauth.New("HS256", []byte("ho-ho"), nil)
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+	))
+
 	r.Route("/user", func(r chi.Router) {
-		r.Post("/createWithArray", uresp.RegisterArray)
-		r.Post("/", uresp.Register)
-		r.Get("/login", uresp.Login)
-		r.Get("/logout", uresp.Logout)
-		r.Get("/{username}", uresp.Get)
-		r.Put("/{username}", uresp.Update)
-		r.Delete("/{username}", uresp.Delete)
+		r.Post("/createWithArray", userСtrl.RegisterArray)
+		r.Post("/", userСtrl.Register)
+		r.Get("/login", userСtrl.Login)
+		r.Get("/logout", userСtrl.Logout)
+		r.Get("/{username}", userСtrl.Get)
+		r.Put("/{username}", userСtrl.Update)
+		r.Delete("/{username}", userСtrl.Delete)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(jwtauth.Verifier(token))
+		r.Use(jwtauth.Authenticator)
+		r.Use(middleAuth.AuthMiddlewareBlackList())
+		r.Use(middleAuth.AuthMiddlewareRoles([]string{"admin"}))
+
+		r.Route("/pet", func(r chi.Router) {
+			r.Post("/", petCtrl.RegisterPet)
+			r.Put("/", petCtrl.UpdatePet)
+			r.Get("/findByStatus", petCtrl.GetPetByStatus)
+			r.Get("/{petId}", petCtrl.GetPet)
+			r.Post("/{petId}", petCtrl.UpdateNameStatusPet)
+			r.Delete("/{petId}", petCtrl.DeletePet)
+			r.Post("/photo/{petId}", petCtrl.AddPhotoPet)
+		})
+	})
+
+	r.Route("/store", func(r chi.Router) {
+		r.Post("/order", orderCtrl.PlaceOrder)
+		r.Get("/order/{orderId}", orderCtrl.GetOrder)
+		r.Delete("/order/{orderId}", orderCtrl.DeleteOrder)
 	})
 
 	return r
