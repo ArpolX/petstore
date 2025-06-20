@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-playground/validator/v10"
 	jsoniter "github.com/json-iterator/go"
+	"go.uber.org/zap"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -122,7 +122,6 @@ func (a *AnimalStore) RegisterPet(w http.ResponseWriter, r *http.Request) {
 func (a *AnimalStore) AddPhotoPet(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(5 << 20)
 	if err != nil {
-		fmt.Println("111", err)
 		http.Error(w, "Неожиданная ошибка", http.StatusInternalServerError)
 		return
 	}
@@ -132,22 +131,24 @@ func (a *AnimalStore) AddPhotoPet(w http.ResponseWriter, r *http.Request) {
 
 	file, handler, err := r.FormFile("photoFile")
 	if err != nil {
-		fmt.Println("222", err)
+		a.Log.Warn("Ошибка в интерпретации фото", zap.String("err", err.Error()))
 		http.Error(w, "Неожиданная ошибка", http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
 
-	cwd, err := os.Getwd()
+	err = os.MkdirAll("uploads", os.ModePerm)
 	if err != nil {
-		log.Fatal(err)
+		a.Log.Warn("Не удалось создать директорию для сохранения фото", zap.String("err", err.Error()))
+		http.Error(w, "Неожиданная ошибка", http.StatusInternalServerError)
+		return
 	}
-	projectRoot := filepath.Dir(cwd)
-	filePath := filepath.Join(projectRoot, "internal", "uploads", fmt.Sprintf("%v_%v", petId, handler.Filename))
+
+	filePath := filepath.Join("uploads/", fmt.Sprintf("%v_%v", petId, handler.Filename))
 
 	dst, err := os.Create(filePath)
 	if err != nil {
-		fmt.Println("333", err)
+		a.Log.Warn("Ошибка при копировании изображения", zap.String("err", err.Error()))
 		http.Error(w, "Неожиданная ошибка", http.StatusInternalServerError)
 		return
 	}
@@ -156,7 +157,6 @@ func (a *AnimalStore) AddPhotoPet(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := a.PetService.AddPhotoPet(petIdInt, filePath)
 	if err != nil {
-		fmt.Println("444", err)
 		http.Error(w, "Неожиданная ошибка", http.StatusInternalServerError)
 		return
 	}
