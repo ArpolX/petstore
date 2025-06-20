@@ -11,6 +11,7 @@ name text not null
 create table pets (
 id integer primary key,
 name text not null,
+photo_url text,
 category_id integer not null references categories(id),
 status text not null
 );

@@ -9,10 +9,9 @@ type Tag struct {
 }
 
 type Pet struct {
-	Id        int
-	Name      string
-	Category  Category
-	PhotoUrls []string
-	Tag       []Tag
-	Status    string
+	Id       int
+	Name     string
+	Category Category
+	Tag      []Tag
+	Status   string
 }

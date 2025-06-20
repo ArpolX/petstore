@@ -36,7 +36,7 @@ func NewRespond(logger logs.Logger, auth service.Auther) Responder {
 }
 
 // @Summary Регистрация нового пользователя
-// @Description Создание нового пользователя с различными полями. Отсчёт будет идти от username (не должен повторяться)
+// @Description Создание нового пользователя или восстановление удалённого с различными полями. Отсчёт будет идти от username (не должен повторяться)
 // @Tags user
 // @Accept json
 // @Produce plain
@@ -79,7 +79,7 @@ func (re *Respond) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Регистрация группы пользователей
-// @Description Создание новой группы пользователей с различными полями. Отсчёт будет идти от username (не должен повторяться)
+// @Description Создание новой группы пользователей с различными полями. Отсчёт будет идти от username (не должен повторяться). Для восстановления аккаунта воспользуйтесь одиночной регистрацией
 // @Tags user
 // @Accept json
 // @Produce plain
@@ -126,14 +126,14 @@ func (re *Respond) RegisterArray(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Вход в систему
-// @Description Создание токена jwt и отправка в заголовке. Получите токен через postman и затем протестируйте logout, если необходимо
+// @Description Создание токена jwt и отправка в заголовке для дальнейшей авторизации
 // @Tags user
 // @Accept json
 // @Produce plain
 // @Param username query string true "Укажи username"
 // @Param password query string true "Укажи пароль"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
-// @Failure 400 {string} Err "Неверной формат структуры"
+// @Success 200 {string} Info "Успешный вход в систему или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /user/login [get]
 func (re *Respond) Login(w http.ResponseWriter, r *http.Request) {
@@ -155,15 +155,15 @@ func (re *Respond) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary Выход из системы
-// @Description Аннулирование jwt токена через black_list
+// @Description Аннулирование jwt токена с использованием black_list
 // @Tags user
 // @Accept json
 // @Produce plain
 // @Param username query string true "Укажи username"
 // @Param password query string true "Укажи пароль"
-// @Param Authorization header string true "Bearer токен доступа для имитации отправки браузером"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
-// @Failure 400 {string} Err "Неверной формат структуры"
+// @Param Authorization header string true "Bearer токен доступа для имитации отправки браузером. Обязательно укажите Bearer перед вставкой токена"
+// @Success 200 {string} Info "Успешный выход из системы или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /user/logout [get]
 func (re *Respond) Logout(w http.ResponseWriter, r *http.Request) {
@@ -180,15 +180,15 @@ func (re *Respond) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
-// @Summary Обновить пользователя
+// @Summary Обновить информацию о пользователе
 // @Description Нельзя обновить на то имя пользователя, которое уже есть в базе
 // @Tags user
 // @Accept json
 // @Produce plain
 // @Param username path string true "Укажи username"
 // @Param user body User true "Заполни все поля для обновления информации"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
-// @Failure 400 {string} Err "Неверной формат структуры"
+// @Success 200 {string} Info "Успешное обновление информации или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /user/{username} [put]
 func (re *Respond) Update(w http.ResponseWriter, r *http.Request) {
@@ -225,14 +225,14 @@ func (re *Respond) Update(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resp))
 }
 
-// @Summary Получить пользователя
-// @Description Получить полную информацию о пользователе (для тестов)
+// @Summary Получить информацию о пользователе
+// @Description Получить полную информацию о пользователе
 // @Tags user
 // @Accept json
 // @Produce json
 // @Param username path string true "Укажи username"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
-// @Failure 400 {string} Err "Неверной формат структуры"
+// @Success 200 {object} User "Успешное получение информации или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /user/{username} [get]
 func (re *Respond) Get(w http.ResponseWriter, r *http.Request) {
@@ -262,8 +262,8 @@ func (re *Respond) Get(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce plain
 // @Param username path string true "Укажи username"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
-// @Failure 400 {string} Err "Неверной формат структуры"
+// @Success 200 {string} Info "Успешное удаление или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /user/{username} [delete]
 func (re *Respond) Delete(w http.ResponseWriter, r *http.Request) {

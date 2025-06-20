@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"petstore/internal/logs"
 	"petstore/internal/modules/order/service"
@@ -31,14 +32,14 @@ func NewOrderRespond(logger logs.Logger, orderServicer service.OrderServicer) Or
 	}
 }
 
-// @Summary Разместить заказ на животного
-// @Description Создание заказа на животного. Отсчёт по id (не должен повторяться)
+// @Summary Разместить заказ на животное
+// @Description Создание заказа на животное. Отсчёт по id (не должен повторяться). Нулевые значения у полей integer не допускаются
 // @Tags order
 // @Accept json
 // @Produce plain
 // @Param order body Order true "Заполни все поля для размещения заказа"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
-// @Failure 400 {string} Err "Неверной формат структуры"
+// @Success 200 {string} Info "Успешное размещение заказа или не ошибочное сообщение"
+// @Failure 400 {string} Err "Неверной формат"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /store/order [post]
 func (o *OrderRespond) PlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +47,7 @@ func (o *OrderRespond) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&order)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Неожиданная ошибка", http.StatusInternalServerError)
 		return
 	}
@@ -79,7 +81,7 @@ func (o *OrderRespond) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param orderId path string true "Введите id заказа"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Success 200 {object} Order "Структура заказа или не ошибочное сообщение"
 // @Failure 400 {string} Err "Неверной формат структуры"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /store/order/{orderId} [get]
@@ -117,7 +119,7 @@ func (o *OrderRespond) GetOrder(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce plain
 // @Param orderId path string true "Введите id заказа"
-// @Success 200 {string} Info "Успешная регистрация или не ошибочное сообщение"
+// @Success 200 {string} Info "Успешное удаление заказа или не ошибочное сообщение"
 // @Failure 400 {string} Err "Неверной формат структуры"
 // @Failure 500 {string} Err "Внутренняя ошибка сервера"
 // @Router /store/order/{orderId} [delete]

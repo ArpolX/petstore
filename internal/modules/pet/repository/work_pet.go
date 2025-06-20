@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"petstore/internal/logs"
 
 	"go.uber.org/zap"
@@ -16,6 +17,7 @@ type PetRepositoryer interface {
 	Create(p Pet) error
 	Update(p Pet) error
 	UpdateNameStatus(petId int, name, status string) error
+	UpdatePhoto(petId int, filepath string) error
 	Delete(petId int) error
 	GetId(petId int) (Pet, error)
 	GetStatus(status string) ([]Pet, error)
@@ -101,6 +103,18 @@ func (pe *PetRepository) UpdateNameStatus(petId int, name, status string) error 
 	return nil
 }
 
+func (pe *PetRepository) UpdatePhoto(petId int, filepath string) error {
+	err := pe.db.Model(&Pet{}).Where("id = ?", petId).Updates(map[string]interface{}{
+		"photo_url": filepath,
+	}).Error
+	if err != nil {
+		pe.Log.Error("Ошибка в Update запросе", zap.String("err", err.Error()))
+		return err
+	}
+
+	return nil
+}
+
 func (pe *PetRepository) Delete(petId int) error {
 	err := pe.db.Transaction(func(tx *gorm.DB) error {
 		err := pe.db.Exec("delete from pet_tags where pet_id = ?", petId).Error
@@ -127,10 +141,11 @@ func (pe *PetRepository) Delete(petId int) error {
 func (pe *PetRepository) GetId(petId int) (Pet, error) {
 	p := Pet{}
 
-	err := pe.db.First(&p, "id = ?", petId).Error
+	err := pe.db.Preload("Tag").First(&p, "id = ?", petId).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return Pet{}, err
 	}
+	fmt.Println(p)
 
 	return p, nil
 }

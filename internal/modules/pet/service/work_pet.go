@@ -12,6 +12,7 @@ type PetService struct {
 
 type PetServicer interface {
 	RegisterService(p Pet) (string, error)
+	AddPhotoPet(petId int, filepath string) (string, error)
 	UpdateService(p Pet) (string, error)
 	UpdateNameStatusService(petId int, name, status string) (string, error)
 	GetByStatusService(status string) ([]repository.Pet, error)
@@ -45,12 +46,11 @@ func (pe *PetService) RegisterService(p Pet) (string, error) {
 	}
 
 	petRepository := repository.Pet{
-		Id:        p.Id,
-		Name:      p.Name,
-		Category:  repository.Category(p.Category),
-		PhotoUrls: p.PhotoUrls,
-		Tag:       tagRepository,
-		Status:    p.Status,
+		Id:       p.Id,
+		Name:     p.Name,
+		Category: repository.Category(p.Category),
+		Tag:      tagRepository,
+		Status:   p.Status,
 	}
 
 	err = pe.PetRepository.Create(petRepository)
@@ -59,6 +59,15 @@ func (pe *PetService) RegisterService(p Pet) (string, error) {
 	}
 
 	return "Регистрация животного прошла успешно", nil
+}
+
+func (pe *PetService) AddPhotoPet(petId int, filepath string) (string, error) {
+	err := pe.PetRepository.UpdatePhoto(petId, filepath)
+	if err != nil {
+		return "", err
+	}
+
+	return "Фото успешно добавлено", nil
 }
 
 func (pe *PetService) UpdateService(p Pet) (string, error) {
@@ -80,12 +89,11 @@ func (pe *PetService) UpdateService(p Pet) (string, error) {
 	}
 
 	petRepository := repository.Pet{
-		Id:        p.Id,
-		Name:      p.Name,
-		Category:  repository.Category(p.Category),
-		PhotoUrls: p.PhotoUrls,
-		Tag:       tagRepository,
-		Status:    p.Status,
+		Id:       p.Id,
+		Name:     p.Name,
+		Category: repository.Category(p.Category),
+		Tag:      tagRepository,
+		Status:   p.Status,
 	}
 
 	err = pe.PetRepository.Update(petRepository)

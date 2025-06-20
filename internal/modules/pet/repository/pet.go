@@ -13,7 +13,7 @@ type Pet struct {
 	Name       string
 	CategoryID int
 	Category   Category `gorm:"foreignKey:CategoryID"`
-	PhotoUrls  []string `gorm:"-"`
-	Tag        []Tag    `gorm:"many2many:pet_tags"`
+	PhotoUrl   string
+	Tag        []Tag `gorm:"many2many:pet_tags"`
 	Status     string
 }

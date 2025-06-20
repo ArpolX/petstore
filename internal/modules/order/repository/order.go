@@ -15,6 +15,7 @@ type OrderRepository struct {
 type OrderRepositorer interface {
 	Create(o Order) error
 	Get(orderId int) (Order, error)
+	GetPetId(petId int) (Pet, error)
 	Delete(orderId int) error
 }
 
@@ -44,6 +45,17 @@ func (or *OrderRepository) Get(orderId int) (Order, error) {
 	}
 
 	return o, nil
+}
+
+func (or *OrderRepository) GetPetId(petId int) (Pet, error) {
+	p := Pet{}
+
+	err := or.Db.First(&p, "id = ?", petId).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return Pet{}, err
+	}
+
+	return p, nil
 }
 
 func (or *OrderRepository) Delete(orderId int) error {

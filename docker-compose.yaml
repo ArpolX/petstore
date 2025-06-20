@@ -9,7 +9,8 @@ services:
     ports:
       - "${PORT}:${PORT}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   db:
     image: postgres
     environment:
@@ -17,6 +18,11 @@ services:
       - POSTGRES_PASSWORD=${DB_password}
       - POSTGRES_DB=${DB_name}
     ports:
-      - "5433:${DB_port}"
+      - "${DB_port}:${DB_port}"
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_user}"]
+      interval: 5s
+      timeout: 7s
+      retries: 5
     

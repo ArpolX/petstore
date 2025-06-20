@@ -5,6 +5,7 @@ definitions:
       complete:
         type: boolean
       id:
+        minimum: 1
         type: integer
       petId:
         type: integer
@@ -31,6 +32,35 @@ definitions:
     required:
     - id
     type: object
+  internal_modules_pet_controller.OutputPet:
+    properties:
+      category_id:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      photoUrl:
+        type: string
+      status:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/internal_modules_pet_controller.OutputTag'
+        type: array
+    type: object
+  internal_modules_pet_controller.OutputPetArray:
+    properties:
+      pets:
+        items:
+          $ref: '#/definitions/internal_modules_pet_controller.OutputPet'
+        type: array
+    type: object
+  internal_modules_pet_controller.OutputTag:
+    properties:
+      id:
+        type: integer
+    type: object
   internal_modules_pet_controller.Pet:
     properties:
       category:
@@ -39,10 +69,6 @@ definitions:
         type: integer
       name:
         type: string
-      photoUrls:
-        items:
-          type: string
-        type: array
       status:
         type: string
       tags:
@@ -97,8 +123,9 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: Создание пользователей, авторизация и аннулирование токена, добавление
-    животного и его последующая продажа
+  description: |-
+    Зоомагазин, который работает с тремя основными сущностями: пользователь, животное и магазин.
+    Здесь доступны CRUD-операции над всеми сущностями, мягкая работа с пользователем (проставление дат действий), авторизация и выход из системы с помощью чёрного списка, загрузка изображения и сохранение локально на сервере. Это самые интересные возможности, попробуйте сами
   title: Petstore
   version: "1.0"
 paths:
@@ -106,8 +133,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создание и добавление нового питомца с различными полями. Отсчёт
-        будет идти от id (не должен повторяться)
+      description: 'Создание и добавление нового питомца с различными полями. Отсчёт
+        будет идти от id (не должен повторяться). В категориях и тегах указывается
+        только id. Категории: 1 - dog, 2 - cat. Tags: 1 - friendly, 2 - wild, 3 -
+        trained. Также доступно 3 статуса: available, sold и pending'
       parameters:
       - description: Заполни все поля для добавления
         in: body
@@ -119,11 +148,19 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное добавление или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
+          schema:
+            type: string
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
           schema:
             type: string
         "500":
@@ -138,7 +175,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Обновить информацию, id не должен изменятся
+      description: 'Обновить информацию, id и фото изменить нельзя. Категории: 1 -
+        dog, 2 - cat. Tags: 1 - friendly, 2 - wild, 3 - trained'
       parameters:
       - description: Заполни все поля для изменения
         in: body
@@ -150,11 +188,19 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное обновление информации или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
+          schema:
+            type: string
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
           schema:
             type: string
         "500":
@@ -181,11 +227,19 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное удаление или не ошибочное сообщение
           schema:
             type: string
         "400":
           description: Неверной формат структуры
+          schema:
+            type: string
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
           schema:
             type: string
         "500":
@@ -211,11 +265,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Получить одного животного или не ошибочное сообщение
           schema:
-            type: string
+            $ref: '#/definitions/internal_modules_pet_controller.OutputPet'
         "400":
           description: Неверной формат структуры
+          schema:
+            type: string
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
           schema:
             type: string
         "500":
@@ -229,8 +291,8 @@ paths:
       - pet
     post:
       consumes:
-      - application/json
-      description: Обновить только name и status
+      - multipart/form-data
+      description: Обновить только name и status.
       parameters:
       - description: Введи Id животного
         in: path
@@ -251,11 +313,19 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное обновление информации или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
+          schema:
+            type: string
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
           schema:
             type: string
         "500":
@@ -282,11 +352,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное получение животных или не ошибочное сообщение
+          schema:
+            items:
+              $ref: '#/definitions/internal_modules_pet_controller.OutputPetArray'
+            type: array
+        "400":
+          description: Неверной формат
           schema:
             type: string
-        "400":
-          description: Неверной формат структуры
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
           schema:
             type: string
         "500":
@@ -298,11 +378,57 @@ paths:
       summary: Получить всех животных по статусу
       tags:
       - pet
+  /pet/photo/{petId}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Добавить фото конкретному питомцу, будет сохранено локально, адрес
+        можете узнать в поле photoUrl
+      parameters:
+      - description: Введи id питомца
+        in: path
+        name: petId
+        required: true
+        type: string
+      - description: Добавь изображение животного
+        in: formData
+        name: photoFile
+        required: true
+        type: file
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Успешное добавление фото или не ошибочное сообщение
+          schema:
+            type: string
+        "400":
+          description: Неверной формат
+          schema:
+            type: string
+        "401":
+          description: Аутентификация не пройдена
+          schema:
+            type: string
+        "403":
+          description: Авторизация не пройдена
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Добавить фото питомца
+      tags:
+      - pet
   /store/order:
     post:
       consumes:
       - application/json
-      description: Создание заказа на животного. Отсчёт по id (не должен повторяться)
+      description: Создание заказа на животное. Отсчёт по id (не должен повторяться).
+        Нулевые значения у полей integer не допускаются
       parameters:
       - description: Заполни все поля для размещения заказа
         in: body
@@ -314,18 +440,18 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное размещение заказа или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
           schema:
             type: string
         "500":
           description: Внутренняя ошибка сервера
           schema:
             type: string
-      summary: Разместить заказ на животного
+      summary: Разместить заказ на животное
       tags:
       - order
   /store/order/{orderId}:
@@ -343,7 +469,7 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное удаление заказа или не ошибочное сообщение
           schema:
             type: string
         "400":
@@ -371,9 +497,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Структура заказа или не ошибочное сообщение
           schema:
-            type: string
+            $ref: '#/definitions/internal_modules_order_controller.Order'
         "400":
           description: Неверной формат структуры
           schema:
@@ -389,8 +515,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создание нового пользователя с различными полями. Отсчёт будет
-        идти от username (не должен повторяться)
+      description: Создание нового пользователя или восстановление удалённого с различными
+        полями. Отсчёт будет идти от username (не должен повторяться)
       parameters:
       - description: Заполни все поля для регистрации
         in: body
@@ -431,11 +557,11 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное удаление или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
           schema:
             type: string
         "500":
@@ -448,7 +574,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Получить полную информацию о пользователе (для тестов)
+      description: Получить полную информацию о пользователе
       parameters:
       - description: Укажи username
         in: path
@@ -459,18 +585,18 @@ paths:
       - application/json
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное получение информации или не ошибочное сообщение
           schema:
-            type: string
+            $ref: '#/definitions/internal_modules_user_controller.User'
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
           schema:
             type: string
         "500":
           description: Внутренняя ошибка сервера
           schema:
             type: string
-      summary: Получить пользователя
+      summary: Получить информацию о пользователе
       tags:
       - user
     put:
@@ -493,18 +619,18 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешное обновление информации или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
           schema:
             type: string
         "500":
           description: Внутренняя ошибка сервера
           schema:
             type: string
-      summary: Обновить пользователя
+      summary: Обновить информацию о пользователе
       tags:
       - user
   /user/createWithArray:
@@ -512,7 +638,8 @@ paths:
       consumes:
       - application/json
       description: Создание новой группы пользователей с различными полями. Отсчёт
-        будет идти от username (не должен повторяться)
+        будет идти от username (не должен повторяться). Для восстановления аккаунта
+        воспользуйтесь одиночной регистрацией
       parameters:
       - description: Заполни все поля для регистрации
         in: body
@@ -542,8 +669,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Создание токена jwt и отправка в заголовке. Получите токен через
-        postman и затем протестируйте logout, если необходимо
+      description: Создание токена jwt и отправка в заголовке для дальнейшей авторизации
       parameters:
       - description: Укажи username
         in: query
@@ -559,11 +685,11 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешный вход в систему или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
           schema:
             type: string
         "500":
@@ -577,7 +703,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Аннулирование jwt токена через black_list
+      description: Аннулирование jwt токена с использованием black_list
       parameters:
       - description: Укажи username
         in: query
@@ -589,7 +715,8 @@ paths:
         name: password
         required: true
         type: string
-      - description: Bearer токен доступа для имитации отправки браузером
+      - description: Bearer токен доступа для имитации отправки браузером. Обязательно
+          укажите Bearer перед вставкой токена
         in: header
         name: Authorization
         required: true
@@ -598,11 +725,11 @@ paths:
       - text/plain
       responses:
         "200":
-          description: Успешная регистрация или не ошибочное сообщение
+          description: Успешный выход из системы или не ошибочное сообщение
           schema:
             type: string
         "400":
-          description: Неверной формат структуры
+          description: Неверной формат
           schema:
             type: string
         "500":
@@ -612,6 +739,8 @@ paths:
       summary: Выход из системы
       tags:
       - user
+schemes:
+- http
 securityDefinitions:
   BearerAuth:
     in: header

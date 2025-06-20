@@ -19,13 +19,23 @@ func NewConnect(cfg config.AppConf) *gorm.DB {
 		Logger: logger.New(
 			log.New(os.Stdout, "\n", log.Flags()),
 			logger.Config{
-				LogLevel: logger.Info,
+				LogLevel: logger.Silent,
 				Colorful: true,
 			},
 		),
 	})
 	if err != nil {
 		log.Fatalf("Ошибка подключения к бд: %v", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Неожиданная ошибка: %v", err)
+	}
+
+	err = sqlDB.Ping()
+	if err != nil {
+		log.Fatalf("Ошибка Ping: %v", err)
 	}
 
 	return db

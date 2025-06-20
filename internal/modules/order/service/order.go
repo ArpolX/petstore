@@ -42,6 +42,15 @@ func (os *OrderService) PlaceOrderService(o Order) (string, error) {
 		Complete: o.Complete,
 	}
 
+	pet, err := os.OrderReposit.GetPetId(o.PetId)
+	if err != nil {
+		return "", err
+	}
+
+	if pet.Id == 0 {
+		return "Животного с таким id нет", nil
+	}
+
 	err = os.OrderReposit.Create(orderRep)
 	if err != nil {
 		return "", err

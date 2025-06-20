@@ -45,6 +45,7 @@ func HandlerPetStore(middleAuth user.AuthMiddlewarer, userСtrl userCtrl.Respond
 			r.Get("/{petId}", petCtrl.GetPet)
 			r.Post("/{petId}", petCtrl.UpdateNameStatusPet)
 			r.Delete("/{petId}", petCtrl.DeletePet)
+			r.Post("/photo/{petId}", petCtrl.AddPhotoPet)
 		})
 	})
 

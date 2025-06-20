@@ -19,6 +19,7 @@ type Database interface {
 	Delete(username string) error
 	GetUsernamePassword(username, password string) (User, error)
 	GetUsername(username string) (User, error)
+	GetUsernameDeleted(username string) (User, error)
 	CreateTokenBlack(jti string) error
 	TokenValid(jti string) (string, error)
 }
@@ -66,6 +67,7 @@ func (d *Db) Update(login string, user RepositoryUser) error {
 			"password":  user.Password,
 			"phone":     user.Phone,
 			"update_at": &now,
+			"delete_at": nil,
 		}).Error
 	if err != nil {
 		d.Log.Error("Ошибка в Update запросе", zap.String("err", err.Error()))
@@ -103,6 +105,18 @@ func (d *Db) GetUsername(username string) (User, error) {
 	u := User{}
 
 	err := d.db.First(&u, "username = ? and delete_at is null", username).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		d.Log.Error("Ошибка в Get запросе", zap.String("err", err.Error()))
+		return User{}, err
+	}
+
+	return u, nil
+}
+
+func (d *Db) GetUsernameDeleted(username string) (User, error) {
+	u := User{}
+
+	err := d.db.First(&u, "username = ? and delete_at is not null", username).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		d.Log.Error("Ошибка в Get запросе", zap.String("err", err.Error()))
 		return User{}, err

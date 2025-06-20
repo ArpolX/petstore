@@ -24,4 +24,6 @@ func Migration(cfg config.AppConf) {
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 		log.Fatalf("Ошибка применения миграции: %v", err)
 	}
+
+	log.Println("Миграции успешно применены")
 }

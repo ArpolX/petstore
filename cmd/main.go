@@ -13,21 +13,24 @@ import (
 	"petstore/config"
 	"petstore/internal/db"
 	"petstore/internal/logs"
+	"petstore/internal/migrate"
 	"petstore/internal/route"
 	"petstore/run"
 
-	_ "petstore/docs"
+	_ "petstore/internal/docs"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
 
 // @title Petstore
-// @description Создание пользователей, авторизация и аннулирование токена, добавление животного и его последующая продажа
+// @description Зоомагазин, который работает с тремя основными сущностями: пользователь, животное и магазин.
+// @description Здесь доступны CRUD-операции над всеми сущностями, мягкая работа с пользователем (проставление дат действий), авторизация и выход из системы с помощью чёрного списка, загрузка изображения и сохранение локально на сервере. Это самые интересные возможности, попробуйте сами
 // @version 1.0
 
 // @host localhost:8080
 // @BasePath /
+// @schemes http
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -44,6 +47,8 @@ func main() {
 	db_conn := db.NewConnect(cfg)
 	// настройка логгера
 	logger := logs.NewLogger()
+	// настройка миграций
+	migrate.Migration(cfg)
 
 	// user слои
 	userRespond, middleAuth := run.NewModulesUser(db_conn, logger)
@@ -61,7 +66,7 @@ func main() {
 	chClose := make(chan os.Signal, 1)
 	signal.Notify(chClose, syscall.SIGINT, syscall.SIGTERM)
 
-	listen, err := net.Listen("tcp", "127.0.0.1:8080")
+	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		logger.Fatal("Ошибка транспортного уровня", zap.String("err", err.Error()))
 	}

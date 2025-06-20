@@ -1,12 +1,10 @@
 package service
 
-import "time"
-
 type Order struct {
 	Id       int
 	PetId    int
 	Quantity int
-	ShipDate time.Time
+	ShipDate string
 	Status   string
 	Complete bool
 }

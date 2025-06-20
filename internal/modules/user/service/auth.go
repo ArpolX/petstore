@@ -36,15 +36,6 @@ func NewAuth(logger logs.Logger, db repository.Database) Auther {
 }
 
 func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
-	repUser, err := a.Db.GetUsernamePassword(user.UserName, user.Password)
-	if err != nil {
-		return "", errors.New("Неожиданная ошибка")
-	}
-
-	if repUser.Username != "" {
-		return "Такой пользователь уже существует", nil
-	}
-
 	repositoryUser := repository.RepositoryUser{
 		UserName:  user.UserName,
 		FirstName: user.FirstName,
@@ -53,6 +44,30 @@ func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
 		Password:  user.Password,
 		Phone:     user.Phone,
 	}
+
+	repUser, err := a.Db.GetUsernameDeleted(user.UserName)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if repUser.Username != "" {
+		err := a.Db.Update(repositoryUser.UserName, repositoryUser)
+		if err != nil {
+			return "", errors.New("Неожиданная ошибка")
+		}
+
+		return fmt.Sprintf("Восстановление пользователя %v прошло успешно, новые данные присвоены", user.UserName), nil
+	}
+
+	repUser, err = a.Db.GetUsernamePassword(user.UserName, user.Password)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if repUser.Username != "" {
+		return "Такой пользователь уже существует", nil
+	}
+
 	err = a.Db.Create(repositoryUser)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
@@ -70,6 +85,24 @@ func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 
 		if repUser.Username != "" {
 			return fmt.Sprintf("Пользователь %v уже существует, процедура прервана", u.UserName), nil
+		}
+
+		repUser, err = a.Db.GetUsernameDeleted(u.UserName)
+		if err != nil {
+			return "", errors.New("Неожиданная ошибка")
+		}
+
+		if repUser.Username != "" {
+			return fmt.Sprintf("Пользователь %v уже существовал ранее, воспользуйтесь одиночным восстановлением аккаунта", u.UserName), nil
+		}
+	}
+
+	for _, u := range userArr.UserArray {
+		prov := u
+		for _, user := range userArr.UserArray {
+			if prov.UserName == user.UserName {
+				return fmt.Sprintf("Вы ввели одинаковых пользователей %v, процедура прервана", user.UserName), nil
+			}
 		}
 	}
 
@@ -156,6 +189,15 @@ func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
 	jti, _ := claims["jti"]
 
 	jtiString := jti.(string)
+
+	jtiValid, err := a.Db.TokenValid(jtiString)
+	if err != nil {
+		return "", errors.New("Неожиданная ошибка")
+	}
+
+	if jtiValid != "" {
+		return "Этот токен уже в чёрном списке", nil
+	}
 
 	err = a.Db.CreateTokenBlack(jtiString)
 	if err != nil {
