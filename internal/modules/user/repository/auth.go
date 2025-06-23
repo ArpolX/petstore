@@ -17,7 +17,6 @@ type Database interface {
 	Create(user RepositoryUser) error
 	Update(login string, user RepositoryUser) error
 	Delete(username string) error
-	GetUsernamePassword(username, password string) (User, error)
 	GetUsername(username string) (User, error)
 	GetUsernameDeleted(username string) (User, error)
 	CreateTokenBlack(jti string) error
@@ -87,18 +86,6 @@ func (d *Db) Delete(username string) error {
 	}
 
 	return nil
-}
-
-func (d *Db) GetUsernamePassword(username, password string) (User, error) {
-	u := User{}
-
-	err := d.db.First(&u, "username = ? and password = ? and delete_at is null", username, password).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		d.Log.Error("Ошибка в Get запросе", zap.String("err", err.Error()))
-		return User{}, err
-	}
-
-	return u, nil
 }
 
 func (d *Db) GetUsername(username string) (User, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Auth struct {
@@ -36,12 +37,18 @@ func NewAuth(logger logs.Logger, db repository.Database) Auther {
 }
 
 func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		a.Log.Warn("Хеширование прошло неуспешно", zap.String("err", err.Error()))
+		return "", errors.New("Неожиданная ошибка")
+	}
+
 	repositoryUser := repository.RepositoryUser{
 		UserName:  user.UserName,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
-		Password:  user.Password,
+		Password:  string(hashPassword),
 		Phone:     user.Phone,
 	}
 
@@ -59,7 +66,7 @@ func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
 		return fmt.Sprintf("Восстановление пользователя %v прошло успешно, новые данные присвоены", user.UserName), nil
 	}
 
-	repUser, err = a.Db.GetUsernamePassword(user.UserName, user.Password)
+	repUser, err = a.Db.GetUsername(user.UserName)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
@@ -78,7 +85,7 @@ func (a *Auth) RegisterUser(user ServiceUser) (string, error) {
 
 func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 	for _, u := range userArr.UserArray {
-		repUser, err := a.Db.GetUsernamePassword(u.UserName, u.Password)
+		repUser, err := a.Db.GetUsername(u.UserName)
 		if err != nil {
 			return "", errors.New("Неожиданная ошибка")
 		}
@@ -97,23 +104,33 @@ func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 		}
 	}
 
-	for _, u := range userArr.UserArray {
-		prov := u
-		for _, user := range userArr.UserArray {
-			if prov.UserName == user.UserName {
-				return fmt.Sprintf("Вы ввели одинаковых пользователей %v, процедура прервана", user.UserName), nil
+	n := len(userArr.UserArray)
+	for i := 0; i < n; i++ {
+		prov := userArr.UserArray[i]
+		for j := 0; j < n; j++ {
+			if i == j {
+				continue
+			}
+			if prov == userArr.UserArray[j] {
+				return fmt.Sprintf("Вы ввели одинаковых пользователей %v, процедура прервана", prov.UserName), nil
 			}
 		}
 	}
 
 	repositoryArrayUser := repository.RepositoryUserArray{}
 	for _, user := range userArr.UserArray {
+		hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			a.Log.Warn("Хеширование прошло неуспешно", zap.String("err", err.Error()))
+			return "", errors.New("Неожиданная ошибка")
+		}
+
 		repositoryUser := repository.RepositoryUser{
 			UserName:  user.UserName,
 			FirstName: user.FirstName,
 			LastName:  user.LastName,
 			Email:     user.Email,
-			Password:  user.Password,
+			Password:  string(hashPassword),
 			Phone:     user.Phone,
 		}
 
@@ -131,13 +148,18 @@ func (a *Auth) RegisterArrayUser(userArr ServiceUserArray) (string, error) {
 }
 
 func (a *Auth) LoginUser(login, password string) (string, string, error) {
-	repUser, err := a.Db.GetUsernamePassword(login, password)
+	repUser, err := a.Db.GetUsername(login)
 	if err != nil {
 		return "", "", errors.New("Неожиданная ошибка")
 	}
 
 	if repUser.Username == "" {
-		return "", "Неверный логин или пароль", nil
+		return "", "Такого логина не существует", nil
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(repUser.Password), []byte(password))
+	if err != nil {
+		return "", "Введён неверный пароль", nil
 	}
 
 	jti := uuid.New().String()
@@ -159,13 +181,18 @@ func (a *Auth) LoginUser(login, password string) (string, string, error) {
 }
 
 func (a *Auth) LogoutUser(login, password, authUser string) (string, error) {
-	repUser, err := a.Db.GetUsernamePassword(login, password)
+	repUser, err := a.Db.GetUsername(login)
 	if err != nil {
 		return "", errors.New("Неожиданная ошибка")
 	}
 
 	if repUser.Username == "" {
-		return "Неверный логин или пароль", nil
+		return "Такого логина не существует", nil
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(repUser.Password), []byte(password))
+	if err != nil {
+		return "Введён неверный пароль", nil
 	}
 
 	authUserSplit := strings.Split(authUser, " ")
@@ -226,12 +253,18 @@ func (a *Auth) UpdateUser(login string, user ServiceUser) (string, error) {
 		return "Логин, на который вы хотите обновиться, уже существует", nil
 	}
 
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		a.Log.Warn("Хеширование прошло неуспешно", zap.String("err", err.Error()))
+		return "", errors.New("Неожиданная ошибка")
+	}
+
 	repositoryUser := repository.RepositoryUser{
 		UserName:  user.UserName,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,
-		Password:  user.Password,
+		Password:  string(hashPassword),
 		Phone:     user.Phone,
 	}
 
